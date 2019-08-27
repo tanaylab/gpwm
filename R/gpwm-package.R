@@ -8,4 +8,7 @@
 #' @import misha
 #' @importFrom glue glue
 #' @importFrom GetoptLong qq
+#' @importFrom purrr map
+#' @importFrom purrr as_vector
+#' @import dplyr
 NULL

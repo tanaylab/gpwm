@@ -8,6 +8,14 @@
 \description{
 gpwm package is a collection of functions for analysis of PWM motifs using the misha package.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/aviezerl/gpwm}
+  \item Report bugs at \url{https://github.com/aviezerl/gpwm/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Aviezer Lifshitz \email{aviezer.lifshitz@weizmann.ac.il}
 

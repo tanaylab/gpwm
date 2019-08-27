@@ -7,7 +7,8 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  out.width = "100%",
+  eval = FALSE
 )
 ```
 # gpwm
@@ -26,4 +27,28 @@ remotes::install_github("aviezerl/gpwm")
 ```
 
 ## Example
+```r
+library(gpwm)
+library(tidyverse)
 
+# Set misha database
+gsetroot("/net/mraid14/export/data/db/tgdb/mm9/trackdb/")
+
+# Define foreground intervals
+intervals_fg <- get_promoters(upstream = 150, downstream=50) %>% sample_n(500)
+
+# Define background intervals
+intervals_bg <- get_promoters(upstream = 150, downstream=50) %>% sample_n(500)
+
+
+intervals <- bind_rows(
+	intervals_fg %>% mutate(type = 'fg'),
+	intervals_bg %>% mutate(type = 'bg')
+)
+
+# Extract motifs
+motifs <- gpwm.extract_all('motifs_10bp', intervals, colname_prefix = 'motifs_10bp')
+
+# Calculate enrichment
+enrich <- gpwm.motif_enrich(fg = motifs %>% filter(type == "fg"), bg = motifs %>% filter(type == "bg"), size = 200, quantile_thresh=0.99, max.jobs = 5)
+```
