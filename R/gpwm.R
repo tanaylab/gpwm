@@ -398,8 +398,15 @@ gpwm.add_global_quantiles <- function(motif_intervals, global_quantiles = NULL, 
 gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, size = NULL, quantile_thresh = 0.99, min_n_fg = 4, min_n_bg = 5, tidy = FALSE, ...) {
 
     if (!tidy){
-        fg <- fg %>% tidyr::gather('track', 'val', starts_with(pattern)) %>% tibble::as_tibble()   
-        bg <- bg %>% tidyr::gather('track', 'val', starts_with(pattern)) %>% tibble::as_tibble()   
+        fg <- fg %>% 
+            tidyr::gather('track', 'val', starts_with(pattern)) %>% 
+            tibble::as_tibble() %>% 
+            mutate(track = gsub(glue("{pattern}\\."), "", track)) 
+
+        bg <- bg %>% 
+            tidyr::gather('track', 'val', starts_with(pattern)) %>% 
+            tibble::as_tibble() %>% 
+            mutate(track = gsub(glue("{pattern}\\."), "", track))
     }
 
     fg <- gpwm.add_global_quantiles(fg, global_quantiles = global_quantiles, pattern = pattern, size = size, ...)
