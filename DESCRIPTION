@@ -1,0 +1,19 @@
+Package: gpwm
+Title: Motif analysis using the Misha package
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Aviezer",
+           family = "Lifshitz",
+           role = c("aut", "cre"),
+           email = "aviezer.lifshitz@weizmann.ac.il")
+Description: gpwm package is a collection of functions for analysis of PWM motifs using the misha package.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Language: es
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 6.1.1
+Imports: 
+    misha,
+    magrittr,
+    GetoptLong
