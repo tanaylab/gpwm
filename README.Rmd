@@ -20,7 +20,7 @@ The goal of gpwm is to supply functions for analysis of PWM motifs using the mis
 
 ## Installation
 
-You can install the gpwm package by running:
+You can install gpwm by running:
 
 ```r
 remotes::install_github("aviezerl/gpwm")
@@ -50,5 +50,11 @@ intervals <- bind_rows(
 motifs <- gpwm.extract_all('motifs_10bp', intervals)
 
 # Calculate enrichment
-enrich <- gpwm.motif_enrich(fg = motifs %>% filter(type == "fg"), bg = motifs %>% filter(type == "bg"), pattern = "motifs_10bp", size = 50, quantile_thresh=0.99, max.jobs = 5)
+enrich <- gpwm.motif_enrich(
+	fg = motifs %>% filter(type == "fg"), 
+	bg = motifs %>% filter(type == "bg"), 
+	pattern = "motifs_10bp", 
+	size = 50, 
+	quantile_thresh=0.99, 
+	max.jobs = 5)
 ```
