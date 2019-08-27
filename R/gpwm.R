@@ -368,15 +368,15 @@ gpwm.get_global_quantiles <- function(pattern, size, quantiles = c(
     global_quantiles_fn <- glue("{.gpwm.base_dir(pattern)}/motif_max_val_quant_{size}.csv")
 
     if (file.exists(global_quantiles_fn)) {
-        res <- read_csv(global_quantiles_fn, col_types = cols(
-            track = col_character(),
-            quant = col_double(),
-            value = col_double(),
-            size = col_integer()
+        res <- readr::read_csv(global_quantiles_fn, col_types = readr::cols(
+            track = readr::col_character(),
+            quant = readr::col_double(),
+            value = readr::col_double(),
+            size = readr::col_integer()
         ))
     } else {
         res <- gpwm.max_val_quantile_all(pattern, size, quantiles, ...)
-        write_csv(res, global_quantiles_fn)
+        readr::write_csv(res, global_quantiles_fn)
     }
     return(res)
 }
@@ -395,7 +395,13 @@ gpwm.add_global_quantiles <- function(motif_intervals, global_quantiles = NULL, 
 
 ########################################################################
 #' @export
-gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, size = NULL, quantile_thresh = 0.99, min_n_fg = 4, min_n_bg = 5, ...) {
+gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, size = NULL, quantile_thresh = 0.99, min_n_fg = 4, min_n_bg = 5, tidy = FALSE, ...) {
+
+    if (!tidy){
+        fg <- fg %>% tidyr::gather('track', 'val', starts_with(pattern)) %>% tibble::as_tibble()   
+        bg <- bg %>% tidyr::gather('track', 'val', starts_with(pattern)) %>% tibble::as_tibble()   
+    }
+
     fg <- gpwm.add_global_quantiles(fg, global_quantiles = global_quantiles, pattern = pattern, size = size, ...)
     bg <- gpwm.add_global_quantiles(bg, global_quantiles = global_quantiles, pattern = pattern, size = size, ...)
 
@@ -409,7 +415,7 @@ gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, s
     counts <- fg_num %>% left_join(bg_num, by = "track")
     counts <- counts %>%
         purrrlyr::by_row(~ phyper(.x$n_fg_ok - 1, .x$n_bg_ok, .x$n_bg - .x$n_bg_ok, .x$n_fg, lower.tail = FALSE), .to = "pval") %>%
-        unnest(pval)
+        tidyr::unnest(pval)
 
     counts <- counts %>% mutate(qval = p.adjust(pval))
     counts <- counts %>% mutate(

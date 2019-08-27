@@ -12,7 +12,7 @@ gcluster.run2(..., command_list = NULL, opt.flags = "",
   queue_flag = "-q @{queue}", memory_flag = "-l mem_free=@{memory}G",
   threads_flag = "-pe threads @{threads}",
   io_saturation_flag = "-l io_saturation=@{io_saturation}",
-  script = .gpatterns.sg_script)
+  script = system.file("sgjob.sh", package = "gpwm"))
 }
 \arguments{
 \item{...}{R commands}

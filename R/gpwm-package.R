@@ -6,9 +6,11 @@
 ## usethis namespace: start
 ## usethis namespace: end
 #' @import misha
+#' @import dplyr
 #' @importFrom glue glue
 #' @importFrom GetoptLong qq
 #' @importFrom purrr map
 #' @importFrom purrr as_vector
-#' @import dplyr
+#' @importFrom purrr map2_df
+#' @importFrom tibble tibble
 NULL
