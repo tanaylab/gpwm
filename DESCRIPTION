@@ -17,3 +17,5 @@ Imports:
     misha,
     magrittr,
     GetoptLong
+URL: https://github.com/aviezerl/gpwm
+BugReports: https://github.com/aviezerl/gpwm/issues
