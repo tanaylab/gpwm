@@ -13,7 +13,7 @@ gpwm.extract_motif <- function(track, intervals, colname = NULL, use_cache = TRU
 
     full_intervals <- intervals
     if (use_cache) {
-        intervals <- .gpwm_cache_misses(track, intervals)
+        intervals <- gpwm_cache_misses(track, intervals)
     }
     intervals <- intervals %>%
         select(chrom, start, end) %>%
@@ -139,7 +139,7 @@ gpwm.extract <- function(..., intervals = NULL, colnames = NULL, tidy = FALSE,
 
 
     intervals <- lapply(tracks, function(track) {
-        .gpwm_cache_misses(track, intervals) %>% select(chrom, start, end)
+        gpwm_cache_misses(track, intervals) %>% select(chrom, start, end)
     })
     names(intervals) <- tracks
     intervals <- intervals[sapply(intervals, nrow) > 0]
@@ -167,7 +167,7 @@ gpwm.extract <- function(..., intervals = NULL, colnames = NULL, tidy = FALSE,
 
             names(results) <- names(intervals)
 
-            .gpwm.verify_jobs_successes(results, commands)
+            gpwm.verify_jobs_successes(results, commands)
 
             for (track in names(intervals)) {
                 .gpwm_cache__[[track]] <- bind_rows(.gpwm_cache__[[track]], results[[track]]$retv) %>%
@@ -192,6 +192,17 @@ gpwm.extract <- function(..., intervals = NULL, colnames = NULL, tidy = FALSE,
 
 ########################################################################
 #' Extract all motifs for intervals 
+#' 
+#' @param pattern prefix for motif tracks (e.g. "motifs_10bp"), can be regular expression
+#' @param intervals intervals set 
+#' @param colname_prefix prefix to add to output the motif energy columns
+#' @param tidy return the motifs in tidy format: for each interval - "track" column with the motif track name and "val" column with the motif track energy. tidy = FALSE would return a column per motif track.
+#' @param parallel parallelize motif extraction using SGE (gcluster.run)
+#' @param ... addinitial parameters for gpwm.extract
+#' 
+#' @return see tidy parameters
+#' 
+#' 
 #' @export
 gpwm.extract_all <- function(pattern, intervals, colname_prefix = NULL, tidy = FALSE, parallel = TRUE, ...) {
     tracks <- gtrack.ls(glue("^{pattern}"), perl = TRUE)
@@ -276,7 +287,7 @@ gpwm.save_cache <- function(filename = NULL) {
 
 
 ########################################################################
-.gpwm_cache_misses <- function(track, intervals) {
+gpwm_cache_misses <- function(track, intervals) {
     if (!is.null(.gpwm_cache__[[track]]) && (nrow(.gpwm_cache__[[track]]) > 0)) {
         return(intervals %>%
             anti_join(.gpwm_cache__[[track]], by = c("chrom", "start", "end")) %>%
@@ -291,7 +302,7 @@ gpwm.save_cache <- function(filename = NULL) {
 }
 
 ########################################################################
-.gpwm.verify_jobs_successes <- function(results, commands) {
+gpwm.verify_jobs_successes <- function(results, commands) {
     mask <- sapply(results, function(x) {
         x$exit.status != "success"
     })
@@ -346,7 +357,7 @@ gpwm.max_val_quantile_all <- function(pattern, size, quantiles = c(
         res <- map2_df(res, motif_tracks, ~ tibble(track = .y, quant = quantiles, value = .x$retv))
     } else {
         res <- gcluster.run2(command_list = commands, ...)
-        .gpwm.verify_jobs_successes(res, commands)
+        gpwm.verify_jobs_successes(res, commands)
         res <- map2_df(res, motif_tracks, ~ tibble(track = .y, quant = quantiles, value = .x$retv))
     }
 
@@ -365,7 +376,7 @@ gpwm.get_global_quantiles <- function(pattern, size, quantiles = c(
                                           0.9,
                                           0.95, 0.99, 0.995, 0.999
                                       ), ...) {
-    global_quantiles_fn <- glue("{.gpwm.base_dir(pattern)}/motif_max_val_quant_{size}.csv")
+    global_quantiles_fn <- glue("{gpwm.base_dir(pattern)}/motif_max_val_quant_{size}.csv")
 
     if (file.exists(global_quantiles_fn)) {
         res <- readr::read_csv(global_quantiles_fn, col_types = readr::cols(
@@ -394,15 +405,31 @@ gpwm.add_global_quantiles <- function(motif_intervals, global_quantiles = NULL, 
 }
 
 ########################################################################
+#' Calculate motif enrichment 
+#' 
+#' @param fg foreground motifs (output of gpwm.extract_all).
+#' @param bg background motifs (output of gpwm.extract_all).
+#' @param global_quantiles global quantiles for motifs (output of gpwm.get_global_quantiles). if NULL 0 the global quantiles would be automatically calculated. 
+#' @param pattern prefix for motif tracks (e.g. "motifs_10bp"), can be regular expression. Needed only if global_quantiles are not give. 
+#' @param size size of intervals in order to use the correct global quantiles. 
+#' @param quantile_thresh quantile of PWM energy that is considered a motif "hit" 
+#' @param min_n_fg minimal number of hits in foreground (motifs below this number would not be included in the hyper geometric test)
+#' @param min_n_bg minimal number of hits in background (motifs below this number would not be included in the hyper geometric test)
+#' @param ... additional parameters for gpwm.global_quantiles
+#' 
+#' @return data frame with number of hits for each motif in the foreground and background, together with p.value and q-value (FDR adjuster). p-value is computed using a hyper-geometric test.
+#' 
 #' @export
-gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, size = NULL, quantile_thresh = 0.99, min_n_fg = 4, min_n_bg = 5, tidy = FALSE, ...) {
-
-    if (!tidy){
+gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, size = NULL, quantile_thresh = 0.99, min_n_fg = 4, min_n_bg = 5, ...) {
+    
+    if(all(c("track", "val") %in% fg)){
         fg <- fg %>%
             tidyr::gather("track", "val", starts_with(pattern)) %>%
             tibble::as_tibble() %>%
             mutate(track = gsub(glue("{pattern}\\."), "", track))
+    }
 
+    if(all(c("track", "val") %in% bg)){
         bg <- bg %>%
             tidyr::gather("track", "val", starts_with(pattern)) %>%
             tibble::as_tibble() %>%
@@ -489,14 +516,9 @@ gpwm.create_lowres_motif_tracks <- function(pattern, new_pattern, resolution, ..
 }
 
 ########################################################################
-.gpwm.base_dir <- function(track) {
+gpwm.base_dir <- function(track) {
     map(track, ~ c(gdir.cwd(), strsplit(.x, ".", fixed = TRUE)[[1]])) %>%
         map(~ do.call(file.path, as.list(.x))) %>%
         as_vector() %>%
         return()
-}
-
-########################################################################
-if (!exists(".gpwm_cache__", envir = globalenv())) {
-    .gpwm_cache__ <<- new.env()
 }

@@ -7,6 +7,7 @@
 ## usethis namespace: end
 #' @import misha
 #' @import dplyr
+#' @import ggplot2
 #' @importFrom glue glue
 #' @importFrom GetoptLong qq
 #' @importFrom purrr map

@@ -23,6 +23,8 @@ Imports:
     tibble,
     readr,
     purrrlyr,
-	tidyr
+	tidyr,
+	ggplot2, 
+	cowplot
 URL: https://github.com/aviezerl/gpwm
 BugReports: https://github.com/aviezerl/gpwm/issues

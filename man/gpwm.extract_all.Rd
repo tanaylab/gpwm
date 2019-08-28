@@ -7,6 +7,22 @@
 gpwm.extract_all(pattern, intervals, colname_prefix = NULL,
   tidy = FALSE, parallel = TRUE, ...)
 }
+\arguments{
+\item{pattern}{prefix for motif tracks (e.g. "motifs_10bp"), can be regular expression}
+
+\item{intervals}{intervals set}
+
+\item{colname_prefix}{prefix to add to output the motif energy columns}
+
+\item{tidy}{return the motifs in tidy format: for each interval - "track" column with the motif track name and "val" column with the motif track energy. tidy = FALSE would return a column per motif track.}
+
+\item{parallel}{parallelize motif extraction using SGE (gcluster.run)}
+
+\item{...}{addinitial parameters for gpwm.extract}
+}
+\value{
+see tidy parameters
+}
 \description{
 Extract all motifs for intervals
 }
