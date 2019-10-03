@@ -37,7 +37,7 @@ intervals <- bind_rows(
     intervals_bg %>% mutate(type = 'bg')
 )
 
-# Extract motifs
+# Extract motifs (note that intervals should have **only** "chrom","start" and "end" columns)
 motifs <- gpwm.extract_all('motifs_10bp', intervals, tidy = TRUE)
 
 # Calculate enrichment
