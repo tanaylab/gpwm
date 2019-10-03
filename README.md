@@ -12,7 +12,7 @@ Installation
 You can install gpwm by running:
 
 ``` r
-remotes::install_github("aviezerl/gpwm")
+remotes::install_github("tanaylab/gpwm")
 ```
 
 Example
