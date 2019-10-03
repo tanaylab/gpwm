@@ -64,7 +64,8 @@ gpwm.extract <- function(..., intervals = NULL, colnames = NULL, tidy = FALSE,
                          memory_flag = "-l mem_free=@{memory}G",
                          threads_flag = "-pe threads @{threads}",
                          io_saturation_flag = "-l io_saturation=@{io_saturation}",
-                         script = paste(Sys.getenv("ANALYSIS_HOME"), "common", "sgjob.sh", sep = "/")) {
+                         script = system.file("sgjob.sh", package ="gpwm")
+                         ) {
     arg_intervals <- NULL
     arg_colnames <- NULL
     arg_parallel <- NULL
