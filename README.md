@@ -38,7 +38,7 @@ intervals <- bind_rows(
 )
 
 # Extract motifs
-motifs <- gpwm.extract_all('motifs_10bp', intervals)
+motifs <- gpwm.extract_all('motifs_10bp', intervals, tidy = TRUE)
 
 # Calculate enrichment
 enrich <- gpwm.motif_enrich(
