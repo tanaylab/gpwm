@@ -449,7 +449,7 @@ gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, s
 
     counts <- fg_num %>% left_join(bg_num, by = "track")
     counts <- counts %>%
-        purrrlyr::by_row(~ phyper(.x$n_fg_ok - 1, .x$n_bg_ok, .x$n_bg - .x$n_bg_ok, .x$n_fg, lower.tail = FALSE), .to = "pval") %>%
+        purrrlyr::by_row(~phyper(.x$n_fg_ok, .x$n_fg_ok + .x$n_bg_ok, .x$n_fg + .x$n_bg - .x$n_fg_ok - .x$n_bg_ok, .x$n_fg, lower.tail = FALSE), .to = "pval") %>%
         tidyr::unnest(pval)
 
     counts <- counts %>% mutate(qval = p.adjust(pval))
