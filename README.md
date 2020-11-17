@@ -12,7 +12,7 @@ Installation
 You can install gpwm by running:
 
 ``` r
-remotes::install_github("tanaylab/gpwm")
+remotes::install_github("aviezerl/gpwm")
 ```
 
 Example
@@ -37,8 +37,8 @@ intervals <- bind_rows(
     intervals_bg %>% mutate(type = 'bg')
 )
 
-# Extract motifs (note that intervals should have **only** "chrom","start" and "end" columns)
-motifs <- gpwm.extract_all('motifs_10bp', intervals, tidy = TRUE)
+# Extract motifs
+motifs <- gpwm.extract_all('motifs_10bp', intervals)
 
 # Calculate enrichment
 enrich <- gpwm.motif_enrich(

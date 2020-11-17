@@ -183,8 +183,8 @@ gpwm.extract <- function(..., intervals = NULL, colnames = NULL, tidy = FALSE,
             rename_(.dots = setNames("gpwm_value__", colnames[track]))
     }
 
-    if (tidy) {
-        full_intervals <- full_intervals %>% gather("track", "val", -(chrom:end))
+    if (tidy) {        
+        full_intervals <- full_intervals %>% gather("track", "val", -any_of(setdiff(colnames(full_intervals), tracks)))
     }
     return(full_intervals)
 }
@@ -411,7 +411,7 @@ gpwm.add_global_quantiles <- function(motif_intervals, global_quantiles = NULL, 
 #' @param fg foreground motifs (output of gpwm.extract_all).
 #' @param bg background motifs (output of gpwm.extract_all).
 #' @param global_quantiles global quantiles for motifs (output of gpwm.get_global_quantiles). if NULL 0 the global quantiles would be automatically calculated. 
-#' @param pattern prefix for motif tracks (e.g. "motifs_10bp"), can be regular expression. Needed only if global_quantiles are not give. 
+#' @param pattern prefix for motif tracks (e.g. "motifs_10bp"), can be regular expression. Needed only if global_quantiles are not given. 
 #' @param size size of intervals in order to use the correct global quantiles. 
 #' @param quantile_thresh quantile of PWM energy that is considered a motif "hit" 
 #' @param min_n_fg minimal number of hits in foreground (motifs below this number would not be included in the hyper geometric test)
@@ -421,20 +421,25 @@ gpwm.add_global_quantiles <- function(motif_intervals, global_quantiles = NULL, 
 #' @return data frame with number of hits for each motif in the foreground and background, together with p.value and q-value (FDR adjuster). p-value is computed using a hyper-geometric test.
 #' 
 #' @export
-gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, size = NULL, quantile_thresh = 0.99, min_n_fg = 4, min_n_bg = 5, ...) {
-    
-    if(all(c("track", "val") %in% fg)){
+gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, size = NULL, quantile_thresh = 0.99, min_n_fg = 4, min_n_bg = 5, ...) {    
+    if(!all(c("track", "val") %in% colnames(fg))){
         fg <- fg %>%
             tidyr::gather("track", "val", starts_with(pattern)) %>%
-            tibble::as_tibble() %>%
-            mutate(track = gsub(glue("{pattern}\\."), "", track))
+            tibble::as_tibble() 
     }
 
-    if(all(c("track", "val") %in% bg)){
+    if (!is.null(pattern)){
+        fg <- fg %>% mutate(track = gsub(glue("{pattern}\\."), "", track))
+    }
+
+    if(!all(c("track", "val") %in% colnames(bg))){
         bg <- bg %>%
             tidyr::gather("track", "val", starts_with(pattern)) %>%
-            tibble::as_tibble() %>%
-            mutate(track = gsub(glue("{pattern}\\."), "", track))
+            tibble::as_tibble() 
+    }
+
+    if (!is.null(pattern)){
+        bg <- bg %>% mutate(track = gsub(glue("{pattern}\\."), "", track))
     }
 
     fg <- gpwm.add_global_quantiles(fg, global_quantiles = global_quantiles, pattern = pattern, size = size, ...)
