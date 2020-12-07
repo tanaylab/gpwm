@@ -299,8 +299,6 @@ gpwm_cache_misses <- function(track, intervals) {
 
 ########################################################################
 gpwm.verify_jobs_successes <- function(results, commands) {
-    # options(error=recover)
-    # browser()
     mask <- sapply(results, function(x) {
         x$exit.status != "success"
     })
