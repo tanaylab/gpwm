@@ -27,7 +27,6 @@ gpwm.extract_motif <- function(track, intervals, colname = NULL, use_cache = TRU
 
         intervals <- intervals %>% select(-intervalID)
     }
-    # print(intervals)
     options(gmax.processes = gmax.processes)
     if (!use_cache) {
         return(full_intervals %>%
@@ -39,7 +38,6 @@ gpwm.extract_motif <- function(track, intervals, colname = NULL, use_cache = TRU
         .gpwm_cache__[[track]] <- bind_rows(.gpwm_cache__[[track]], intervals) %>%
             arrange(chrom, start, end)
     }
-    # print(head(full_intervals))
     return(full_intervals %>%
         left_join(.gpwm_cache__[[track]], by = c("chrom", "start", "end")) %>%
         rename_(.dots = setNames("gpwm_value__", colname)))
@@ -144,11 +142,7 @@ gpwm.extract <- function(..., intervals = NULL, colnames = NULL, tidy = FALSE,
     })
     names(intervals) <- tracks
     intervals <- intervals[sapply(intervals, nrow) > 0]
-    # print(head(intervals))
-    # print(head(names(intervals)))
-    # options(error=recover)
     if (length(intervals) > 0) {
-        # browser()
         commands <- sapply(
             1:length(intervals),
             function(i) {
@@ -167,11 +161,9 @@ gpwm.extract <- function(..., intervals = NULL, colnames = NULL, tidy = FALSE,
             }
         }
         else {
-            # print(head(commands))
             results <- gcluster.run2(command_list = commands, max.jobs = max.jobs, R = R, packages = packages, jobs_title = jobs_title, job_names = job_names, collapse_results = F, memory = memory, threads = threads, io_saturation = io_saturation, memory_flag = memory_flag, threads_flag = threads_flag, io_saturation_flag = io_saturation_flag, script = script, queue = queue, queue_flag = queue_flag)
 
             names(results) <- names(intervals)
-            print(results[[1]]$stderr)
             gpwm.verify_jobs_successes(results, commands)
             for (track in names(intervals)) {
                 .gpwm_cache__[[track]] <- bind_rows(.gpwm_cache__[[track]], results[[track]]$retv) %>%
