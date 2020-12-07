@@ -429,7 +429,6 @@ gpwm.add_global_quantiles <- function(motif_intervals, global_quantiles = NULL, 
 #' 
 #' @export
 gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, size = NULL, quantile_thresh = 0.99, min_n_fg = 4, min_n_bg = 5, ...) {    
-    # options(error=recover)
     if(!all(c("track", "val") %in% colnames(fg))){
         fg <- fg %>%
             tidyr::gather("track", "val", starts_with(pattern)) %>%
@@ -449,7 +448,6 @@ gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, s
     if (!is.null(pattern)){
         bg <- bg %>% mutate(track = gsub(glue("{pattern}\\."), "", track))
     }
-    # browser()
     fg <- gpwm.add_global_quantiles(fg, global_quantiles = global_quantiles, pattern = pattern, size = size, ...)
     bg <- gpwm.add_global_quantiles(bg, global_quantiles = global_quantiles, pattern = pattern, size = size, ...)
 
