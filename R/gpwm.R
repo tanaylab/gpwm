@@ -27,7 +27,7 @@ gpwm.extract_motif <- function(track, intervals, colname = NULL, use_cache = TRU
 
         intervals <- intervals %>% select(-intervalID)
     }
-
+    # print(intervals)
     options(gmax.processes = gmax.processes)
     if (!use_cache) {
         return(full_intervals %>%
@@ -39,7 +39,7 @@ gpwm.extract_motif <- function(track, intervals, colname = NULL, use_cache = TRU
         .gpwm_cache__[[track]] <- bind_rows(.gpwm_cache__[[track]], intervals) %>%
             arrange(chrom, start, end)
     }
-
+    # print(head(full_intervals))
     return(full_intervals %>%
         left_join(.gpwm_cache__[[track]], by = c("chrom", "start", "end")) %>%
         rename_(.dots = setNames("gpwm_value__", colname)))
@@ -144,8 +144,11 @@ gpwm.extract <- function(..., intervals = NULL, colnames = NULL, tidy = FALSE,
     })
     names(intervals) <- tracks
     intervals <- intervals[sapply(intervals, nrow) > 0]
-
+    # print(head(intervals))
+    # print(head(names(intervals)))
+    # options(error=recover)
     if (length(intervals) > 0) {
+        # browser()
         commands <- sapply(
             1:length(intervals),
             function(i) {
@@ -164,12 +167,12 @@ gpwm.extract <- function(..., intervals = NULL, colnames = NULL, tidy = FALSE,
             }
         }
         else {
+            # print(head(commands))
             results <- gcluster.run2(command_list = commands, max.jobs = max.jobs, R = R, packages = packages, jobs_title = jobs_title, job_names = job_names, collapse_results = F, memory = memory, threads = threads, io_saturation = io_saturation, memory_flag = memory_flag, threads_flag = threads_flag, io_saturation_flag = io_saturation_flag, script = script, queue = queue, queue_flag = queue_flag)
 
             names(results) <- names(intervals)
-
+            print(results[[1]]$stderr)
             gpwm.verify_jobs_successes(results, commands)
-
             for (track in names(intervals)) {
                 .gpwm_cache__[[track]] <- bind_rows(.gpwm_cache__[[track]], results[[track]]$retv) %>%
                     arrange(chrom, start, end)
@@ -304,6 +307,8 @@ gpwm_cache_misses <- function(track, intervals) {
 
 ########################################################################
 gpwm.verify_jobs_successes <- function(results, commands) {
+    # options(error=recover)
+    # browser()
     mask <- sapply(results, function(x) {
         x$exit.status != "success"
     })
@@ -325,16 +330,17 @@ gpwm.verify_jobs_successes <- function(results, commands) {
 
 ########################################################################
 #' @export
-gpwm.max_val_quantile <- function(track, size, quantiles = c(
-                                      0.9, 0.95, 0.99,
-                                      0.995, 0.999
+gpwm.max_val_quantile <- function(track, size, intervals = ALLGENOME[[1]], 
+                                        quantiles = c(
+                                        0.9, 0.95, 0.99,
+                                        0.995, 0.999
                                   )) {
     gmax.processes <- getOption("gmax.processes")
     options(gmax.processes = 1)
     vtrack <- paste(track, "max", sep = "_")
     gvtrack.create(vtrack, track, "max")
     q <- gquantiles(vtrack,
-        percentiles = quantiles, intervals = ALLGENOME[[1]],
+        percentiles = quantiles, intervals = intervals,
         iterator = size
     )
     options(gmax.processes = gmax.processes)
@@ -343,14 +349,20 @@ gpwm.max_val_quantile <- function(track, size, quantiles = c(
 
 ########################################################################
 #' @export
-gpwm.max_val_quantile_all <- function(pattern, size, quantiles = c(
+gpwm.max_val_quantile_all <- function(pattern, size, intervals = ALLGENOME[[1]],
+                                          quantiles = c(
                                           0.9,
                                           0.95, 0.99, 0.995, 0.999
                                       ), parallel = TRUE, ...) {
-    motif_tracks <- gtrack.ls(glue("^{pattern}"), perl = TRUE)
+    if (length(pattern) > 1) {
+        motif_tracks = pattern
+    }
+    else {
+        motif_tracks <- gtrack.ls(glue("^{pattern}"), perl = TRUE)
+    }
     quantiles_str <- paste("c(", paste(quantiles, collapse = ", "), ")")
 
-    commands <- glue('gpwm.max_val_quantile("{motif_tracks}", {size}, {quantiles_str})')
+    commands <- glue('gpwm.max_val_quantile("{motif_tracks}", {size}, {intervals}, {quantiles_str})')
     if (!parallel) {
         parsed_cmds <- parse(text = commands)
         names(parsed_cmds) <- motif_tracks
@@ -373,7 +385,8 @@ gpwm.max_val_quantile_all <- function(pattern, size, quantiles = c(
 
 ########################################################################
 #' @export
-gpwm.get_global_quantiles <- function(pattern, size, quantiles = c(
+gpwm.get_global_quantiles <- function(pattern, size, intervals = ALLGENOME[[1]],
+                                          quantiles = c(
                                           0.9,
                                           0.95, 0.99, 0.995, 0.999
                                       ), ...) {
@@ -387,7 +400,7 @@ gpwm.get_global_quantiles <- function(pattern, size, quantiles = c(
             size = readr::col_integer()
         ))
     } else {
-        res <- gpwm.max_val_quantile_all(pattern, size, quantiles, ...)
+        res <- gpwm.max_val_quantile_all(pattern, size, intervals, quantiles, ...)
         readr::write_csv(res, global_quantiles_fn)
     }
     return(res)
@@ -396,8 +409,12 @@ gpwm.get_global_quantiles <- function(pattern, size, quantiles = c(
 ########################################################################
 #' @export
 gpwm.add_global_quantiles <- function(motif_intervals, global_quantiles = NULL, pattern = NULL, size = NULL, quantile_thresh = 0.99, ...) {
-    if (is.null(global_quantiles)) {
+    if (is.null(global_quantiles) | global_quantiles) {
         global_quantiles <- gpwm.get_global_quantiles(pattern = pattern, size = size, ...)
+    }
+    else if (!global_quantiles) {
+        global_quantiles <- gpwm.get_global_quantiles(pattern = pattern, size = size, 
+            intervals = select(motif_intervals, chrom, start, end), ...)
     }
     global_quantiles <- global_quantiles %>%
         filter(quant == quantile_thresh) %>%
@@ -422,6 +439,7 @@ gpwm.add_global_quantiles <- function(motif_intervals, global_quantiles = NULL, 
 #' 
 #' @export
 gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, size = NULL, quantile_thresh = 0.99, min_n_fg = 4, min_n_bg = 5, ...) {    
+    # options(error=recover)
     if(!all(c("track", "val") %in% colnames(fg))){
         fg <- fg %>%
             tidyr::gather("track", "val", starts_with(pattern)) %>%
@@ -441,7 +459,7 @@ gpwm.motif_enrich <- function(fg, bg, global_quantiles = NULL, pattern = NULL, s
     if (!is.null(pattern)){
         bg <- bg %>% mutate(track = gsub(glue("{pattern}\\."), "", track))
     }
-
+    # browser()
     fg <- gpwm.add_global_quantiles(fg, global_quantiles = global_quantiles, pattern = pattern, size = size, ...)
     bg <- gpwm.add_global_quantiles(bg, global_quantiles = global_quantiles, pattern = pattern, size = size, ...)
 
